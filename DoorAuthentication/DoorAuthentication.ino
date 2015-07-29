@@ -54,16 +54,20 @@ int z=0;
 
 void setup()
 {
+  fps.Close();
+  fps.SetLED(false);
   Serial.begin(9600);
   lcd.begin(16, 2); // declaramos el numero de filas y columnas que tendrá nuestro display LCD.(en éste caso, el mío tenía 16 columnas por fila y dos filas)
+  lcd.clear();
   lcd.setCursor(0,0);
+  lcd.print("Insertar PIN:");
   //fps.UseSerialDebug = true;
   //Al comenza la funcion SETUP lo deshabilitamos, vamos ponesmos esto en la primera linea de la funcion
   //wdt_disable();
-  Serial.print("PIN Lock ");
-  delay(1000);
-  Serial.print("  Enter PIN...");
-  Serial.println();
+  //Serial.print("PIN Lock ");
+  //delay(1000);
+  //Serial.print("  Enter PIN...");
+  //Serial.println();
   //En la ultima linea de la función setup lo activamos y indicamos el tiempo para reset en este caso 250mSg.
   //wdt_enable(WDTO_8S);
 }
@@ -81,14 +85,15 @@ void correctPIN() // do this if correct PIN entered
  
 void incorrectPIN() // do this if incorrect PIN entered
 {
-  lcd.clear();
   attempt[6]={0};//Reseteamos el array de intentos
   //Serial.print(" * Try again *");
+  lcd.clear();
+  lcd.setCursor(0,0);
   lcd.print("* Try again *");
-  delay(4000);
-  //lcd.clear();
-  //lcd.setCursor(0,0);
-  lcd.print("Enter PIN");
+  delay(3000);
+  lcd.clear();
+  lcd.setCursor(0,1);
+  lcd.print("Insertar PIN:");
   //Serial.print("  Enter PIN...");
   //Serial.println();
 }
@@ -116,37 +121,67 @@ void checkPIN()
     incorrectPIN();
     Resetea();
   }
- 
-  for (int zz=0; zz<6; zz++) 
-  {
-    attempt[zz]='0';
-  }
+  attempt[6]={0};//Reseteamos el array de intentos
+  //for (int zz=0; zz<6; zz++) 
+  //{
+    //attempt[zz]='0';
+  //}
 }
 
 void checkFinger(){
   int tries=0;
   boolean success=false;
-  Serial.println("Please press finger");
+  //Serial.println("Please press finger");
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Ponga el dedo en");
+  lcd.setCursor(0,1);
+  lcd.print("el lector");
   do{
-        // Identify fingerprint test
+  // Identify fingerprint test
 	if (fps.IsPressFinger())
 	{
 		fps.CaptureFinger(false);
 		int id = fps.Identify1_N();
-		if (id <200)
+		if (id<200)
 		{
-			Serial.print("Verified ID:");
-			Serial.println(id);
-                        success=true;
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Bienvenido a");
+      lcd.setCursor(0,1);
+      Serial.print(id);
+      lcd.print("casa ");
+			//Serial.print("Verified ID:");
+      switch(id){
+        case 0:
+          lcd.setCursor(5,1);
+          lcd.print("Alejandro");
+          //Abriremos la puerta mediante 
+        break;
+     }
+			//Serial.println(id);
+     delay(3500);
+      success=true;
 		}
 		else
 		{
-		  Serial.println("Finger not found");
-                   tries++;
-                  if(tries==5){
-                    Serial.println("Please press finger");
-                    break;
-                  }
+      lcd.clear();
+      lcd.setCursor(0,0);
+		  lcd.print("Huella no");
+      lcd.setCursor(0,1);
+      lcd.print("encontrada...");
+      delay(2500);
+      tries++;
+      if(tries==5){
+        //Serial.println("Please press finger");
+        break;
+      }else{
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("Ponga el dedo en");
+        lcd.setCursor(0,1);
+        lcd.print("el lector");
+      }
 		}
 	}
 	delay(100);
@@ -165,6 +200,10 @@ void readKeypad()
     {
     case '*':
       z=0;
+      attempt[6]={0};//Reseteamos el array de intentos
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Insertar PIN:");
       break;
     case '#':
       z=0;
@@ -173,8 +212,10 @@ void readKeypad()
       break;
     default:
       attempt[z]=key;
+      lcd.setCursor(z,1);
       z++;
       Serial.print(key);
+      lcd.print("*");
       break;
     }
   }
