@@ -7,7 +7,12 @@
 #include "FPS_GT511C3.h"
 #include "SoftwareSerial.h"
 #include <avr/wdt.h>
+#include <LiquidCrystal.h>
 
+//****Los pines que usaremos para nuestro display******
+ 
+//                RS  Enable  D4  D5  D6  D7
+LiquidCrystal lcd(21,   20,   19, 18, 17, 16);
 FPS_GT511C3 fps(13, 15); //Finger print scanner
 const byte ROWS = 4; //four rows
 const byte COLS = 4; //four columns
@@ -50,7 +55,9 @@ int z=0;
 void setup()
 {
   Serial.begin(9600);
-  fps.UseSerialDebug = true;
+  lcd.begin(16, 2); // declaramos el numero de filas y columnas que tendrá nuestro display LCD.(en éste caso, el mío tenía 16 columnas por fila y dos filas)
+  lcd.setCursor(0,0);
+  //fps.UseSerialDebug = true;
   //Al comenza la funcion SETUP lo deshabilitamos, vamos ponesmos esto en la primera linea de la funcion
   //wdt_disable();
   Serial.print("PIN Lock ");
@@ -74,11 +81,16 @@ void correctPIN() // do this if correct PIN entered
  
 void incorrectPIN() // do this if incorrect PIN entered
 {
+  lcd.clear();
   attempt[6]={0};//Reseteamos el array de intentos
-  Serial.print(" * Try again *");
-  delay(1000);
-  Serial.print("  Enter PIN...");
-  Serial.println();
+  //Serial.print(" * Try again *");
+  lcd.print("* Try again *");
+  delay(4000);
+  //lcd.clear();
+  //lcd.setCursor(0,0);
+  lcd.print("Enter PIN");
+  //Serial.print("  Enter PIN...");
+  //Serial.println();
 }
  
 void(* Resetea) (void) = 0;
