@@ -4,14 +4,11 @@
 // http://tronixstuff.com/tutorials > chapter 42
  
 #include "Keypad.h"
-#include <Wire.h>
 #include "FPS_GT511C3.h"
 #include "SoftwareSerial.h"
-#include <avr/wdt.h>
 #include <LiquidCrystal.h>
 
 //****Los pines que usaremos para nuestro display******
- 
 //                RS  Enable  D4  D5  D6  D7
 LiquidCrystal lcd(21,   20,   19, 18, 17, 16);
 FPS_GT511C3 fps(13, 15); //Finger print scanner
@@ -34,17 +31,17 @@ char keys[ROWS][COLS] =
 byte rowPins[ROWS] = {
   5, 4, 3, 2}; //connect to the row pinouts of the keypad
   //Arduino Pin - KeyPad Pin
-  // 5 - 5
-  // 4 - 6
-  // 3 - 7
-  // 2 - 8 
+  //    5       -     5 
+  //    4       -     6
+  //    3       -     7
+  //    2       -     8 
 byte colPins[COLS] = {
   9, 8, 7, 6}; //connect to the column pinouts of the keypad
   //Arduino Pin - KeyPad Pin
-  // 9 - 1
-  // 8 - 2
-  // 7 - 3
-  // 6 - 4 
+  //     9      -     1
+  //     8      -     2
+  //     7      -     3
+  //     6      -     4 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
  
 char PIN[6]={
@@ -90,7 +87,7 @@ void incorrectPIN() // do this if incorrect PIN entered
   //Serial.print(" * Try again *");
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("* Try again *");
+  lcd.print("PIN Incorrecto");
   delay(2500);
   lcd.clear();
   lcd.setCursor(0,1);
@@ -259,6 +256,11 @@ void readKeypad()
       attempt[6]={0};//Reseteamos el array de intentos
       lcd.clear();
       lcd.setCursor(0,0);
+      lcd.print("Limpiando ");
+      lcd.setCursor(0,1);
+      lcd.print("pantalla...");
+      delay(1500);
+      lcd.clear();
       lcd.print("Insertar PIN:");
       break;
     case '#':
