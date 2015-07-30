@@ -1,4 +1,5 @@
 
+
 // PIN switch with 16-digit numeric keypad
 // http://tronixstuff.com/tutorials > chapter 42
  
@@ -90,7 +91,7 @@ void incorrectPIN() // do this if incorrect PIN entered
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("* Try again *");
-  delay(3000);
+  delay(2500);
   lcd.clear();
   lcd.setCursor(0,1);
   lcd.print("Insertar PIN:");
@@ -104,7 +105,7 @@ void checkPIN()
 {
   int correct=0;
   int i;
-  Serial.println();  
+  //Serial.println();  
   for ( i = 0;   i < 6 ;  i++ )
   {
     if (attempt[i]==PIN[i])
@@ -145,20 +146,34 @@ void checkFinger(){
 		int id = fps.Identify1_N();
 		if (id<200)
 		{
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Bienvenido a");
-      lcd.setCursor(0,1);
-      Serial.print(id);
-      lcd.print("casa ");
+			
 			//Serial.print("Verified ID:");
       switch(id){
         case 0:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+          welcomeHome(1);
+          break;
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+          welcomeHome(2);
+          break;
+        default:
           lcd.setCursor(5,1);
-          lcd.print("Alejandro");
-          //Abriremos la puerta mediante 
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Identificador ");
+          lcd.setCursor(0,1);
+          Serial.print(id);
+          lcd.print("inconsistente");
         break;
      }
+     
 			//Serial.println(id);
      delay(3500);
       success=true;
@@ -190,7 +205,48 @@ void checkFinger(){
   fps.SetLED(false);
   Resetea();
 }
- 
+
+void welcomeHome (int id){
+  // definicion del nuevo caracter
+      byte love[8] = {
+          B00000,
+          B00000,
+          B11011,
+          B11111,
+          B11111,
+          B01110,
+          B00100,
+          B00000
+      };
+      lcd.createChar(0, love);
+  switch(id){
+    case 1:
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Bienvenido a");
+      lcd.setCursor(0,1);
+      Serial.print(id);
+      lcd.print("casa Alejandro");
+      //Abriremos la puerta mediante 
+      break;
+    case 2:
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Bienvenida a");
+      lcd.setCursor(0,1);
+      Serial.print(id);
+      lcd.print("casa reina mia ");
+      lcd.write(byte(0));
+      break;
+    default:
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Unespected error.");
+      break;
+  }
+  
+}
+
 void readKeypad()
 {
   char key = keypad.getKey();
