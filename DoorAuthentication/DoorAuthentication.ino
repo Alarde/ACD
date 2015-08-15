@@ -44,14 +44,23 @@ byte colPins[COLS] = {
   //     6      -     4 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
  
-char PIN[6]={
-  '1','2','3','A','5','6'}; // our secret (!) number
+char PIN2OPEN[6]={
+  '1','1','1','1','1','A'}; // our secret (!) number
+
+char PIN2CLOSE[6]={
+  '1','1','1','1','1','B'}; // our secret (!) number
+
 char attempt[6]={ 
   '0','0','0','0','0','0'}; // used for comparison
 int z=0;
+boolean openDoor=false;
+int openChannel=22;
+int closeChannel=25;
 
 void setup()
 {
+  pinMode(openChannel, OUTPUT);
+  pinMode(closeChannel, OUTPUT);
   fps.Close();
   fps.SetLED(false);
   Serial.begin(9600);
@@ -101,19 +110,29 @@ void(* Resetea) (void) = 0;
 void checkPIN()
 {
   int correct=0;
+  int correct2open=0;
+  int correct2close=0;
   int i;
   //Serial.println();  
   for ( i = 0;   i < 6 ;  i++ )
   {
-    if (attempt[i]==PIN[i])
+    if (attempt[i]==PIN2OPEN[i])
     {
-      correct++;
+      correct2open++;
+    }
+    if (attempt[i]==PIN2CLOSE[i]){
+      correct2close++;
     }
   }
-  if (correct==6)
-  {
+  Serial.println(correct2open);
+  Serial.println(correct2close);
+  if (correct2open==6){
+    openDoor=true;
     correctPIN();
-  } 
+  }else if(correct2close==6){
+    openDoor=false;
+    correctPIN();
+  }
   else
   {
     incorrectPIN();
@@ -166,7 +185,7 @@ void checkFinger(){
           lcd.setCursor(0,0);
           lcd.print("Identificador ");
           lcd.setCursor(0,1);
-          Serial.print(id);
+          //Serial.print(id);
           lcd.print("inconsistente");
         break;
      }
@@ -204,6 +223,7 @@ void checkFinger(){
 }
 
 void welcomeHome (int id){
+  boolean opened = false;
   // definicion del nuevo caracter
       byte love[8] = {
           B00000,
@@ -220,28 +240,56 @@ void welcomeHome (int id){
     case 1:
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("Bienvenido a");
-      lcd.setCursor(0,1);
-      Serial.print(id);
-      lcd.print("casa Alejandro");
-      //Abriremos la puerta mediante 
+      if(openDoor){
+        lcd.print("Bienvenido a");
+        lcd.setCursor(0,1);
+        //Serial.print(id);
+        lcd.print("casa Alex");
+      }else{
+        lcd.print("Hasta pronto");
+        lcd.setCursor(0,1);
+        //Serial.print(id);
+        lcd.print("Alex");
+      }
+      
+      openDoorRelay();
       break;
     case 2:
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("Bienvenida a");
-      lcd.setCursor(0,1);
-      Serial.print(id);
-      lcd.print("casa reina mia ");
-      lcd.write(byte(0));
+      if(openDoor){
+        lcd.print("Bienvenida a");
+        lcd.setCursor(0,1);
+        //Serial.print(id);
+        lcd.print("casa reina mia ");
+        lcd.write(byte(0));
+      }else{
+        lcd.print("Hasta pronto");
+        lcd.setCursor(0,1);
+        //Serial.print(id);
+        lcd.print("reina mia ");
+        lcd.write(byte(0));
+      }
+      openDoorRelay();
       break;
     default:
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("Unespected error.");
       break;
+    }
+}
+
+void openDoorRelay(){
+  if (openDoor){ //only to open the door
+    digitalWrite(openChannel, HIGH);
+    delay(100);
+    digitalWrite(openChannel, LOW);
+  }else{
+     digitalWrite(closeChannel, HIGH);
+    delay(100);
+    digitalWrite(closeChannel, LOW);
   }
-  
 }
 
 void readKeypad()
@@ -272,7 +320,7 @@ void readKeypad()
       attempt[z]=key;
       lcd.setCursor(z,1);
       z++;
-      Serial.print(key);
+      //Serial.print(key);
       lcd.print("*");
       break;
     }
