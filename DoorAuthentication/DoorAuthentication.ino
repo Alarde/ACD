@@ -1,17 +1,10 @@
-
-
-// PIN switch with 16-digit numeric keypad
-// http://tronixstuff.com/tutorials > chapter 42
- 
+#include <NokiaLCD.h>
 #include "Keypad.h"
 #include "FPS_GT511C3.h"
 #include "SoftwareSerial.h"
-#include <LiquidCrystal.h>
+NokiaLCD NokiaLCD(17,18,19,20,21); // (SCK, MOSI, DC, RST, CS)
 
-//****Los pines que usaremos para nuestro display******
-//                RS  Enable  D4  D5  D6  D7
-LiquidCrystal lcd(21,   20,   19, 18, 17, 16);
-FPS_GT511C3 fps(13, 15); //Finger print scanner
+FPS_GT511C3 fps(13, 14); //Finger print scanner
 const byte ROWS = 4; //four rows
 const byte COLS = 4; //four columns
 char keys[ROWS][COLS] =
@@ -43,79 +36,77 @@ byte colPins[COLS] = {
   //     7      -     3
   //     6      -     4 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
- 
-char PIN2OPEN[6]={
-  '1','1','1','1','1','A'}; // our secret (!) number
 
-char PIN2CLOSE[6]={
-  '1','1','1','1','1','B'}; // our secret (!) number
+char PIN2OPEN[6]={'1','1','1','1','1','A'}; // our secret (!) number
 
-char attempt[6]={ 
-  '0','0','0','0','0','0'}; // used for comparison
-int z=0;
+char PIN2CLOSE[6]={'1','1','1','1','1','B'}; // our secret (!) number
+  
+char attempt[6]={'0','0','0','0','0','0'}; // used for comparison
+
 boolean openDoor=false;
-int openChannel=22;
-int closeChannel=25;
+int openChannel=15;
+int closeChannel=16;
+int z=0;
 
-void setup()
-{
-  pinMode(openChannel, OUTPUT);
-  pinMode(closeChannel, OUTPUT);
-  fps.Close();
-  fps.SetLED(false);
+void setup(){
   Serial.begin(9600);
-  lcd.begin(16, 2); // declaramos el numero de filas y columnas que tendrá nuestro display LCD.(en éste caso, el mío tenía 16 columnas por fila y dos filas)
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("Insertar PIN:");
-  //fps.UseSerialDebug = true;
-  //Al comenza la funcion SETUP lo deshabilitamos, vamos ponesmos esto en la primera linea de la funcion
-  //wdt_disable();
-  //Serial.print("PIN Lock ");
-  //delay(1000);
-  //Serial.print("  Enter PIN...");
-  //Serial.println();
-  //En la ultima linea de la función setup lo activamos y indicamos el tiempo para reset en este caso 250mSg.
-  //wdt_enable(WDTO_8S);
+  NokiaLCD.init();   // Init screen.
+  NokiaLCD.clear();  // Clear screen.
+  NokiaLCD.setCursor(8,0);
+  NokiaLCD.print("Introduzca");
+  NokiaLCD.setCursor(30,1);
+  NokiaLCD.print("PIN:");
+  NokiaLCD.setCursor(0,2);
 }
- 
-void correctPIN() // do this if correct PIN entered
-{
-  //Serial.print("* Correct PIN *");
-  //delay(1000);
-  //Serial.print("  Enter PIN...");
-  //Serial.println();
-  fps.Open();
-  fps.SetLED(true);
-  checkFinger();
-}
- 
-void incorrectPIN() // do this if incorrect PIN entered
-{
-  attempt[6]={0};//Reseteamos el array de intentos
-  //Serial.print(" * Try again *");
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("PIN Incorrecto");
-  delay(2500);
-  lcd.clear();
-  lcd.setCursor(0,1);
-  lcd.print("Insertar PIN:");
-  //Serial.print("  Enter PIN...");
-  //Serial.println();
-}
- 
+
 void(* Resetea) (void) = 0;
 
-void checkPIN()
-{
+void readKeypad(){
+  char key = keypad.getKey();
+  if (key != NO_KEY)
+  {
+    switch(key)
+    {
+    case '*':
+      z=0;
+      attempt[6]={0};//Reseteamos el array de intentos
+      NokiaLCD.clear();
+      NokiaLCD.setCursor(0,0);
+      NokiaLCD.print("Limpiando ");
+      NokiaLCD.setCursor(0,1);
+      NokiaLCD.print("pantalla...");
+      delay(1500);
+      NokiaLCD.clear();
+      NokiaLCD.setCursor(8,0);
+      NokiaLCD.print("Introduzca");
+      NokiaLCD.setCursor(30,1);
+      NokiaLCD.print("PIN:");
+      NokiaLCD.setCursor(0,2);
+      break;
+    case '#':
+      z=0;
+      delay(100); // for extra debounce
+      checkPIN();
+      break;
+    default:
+      attempt[z]=key;
+      //NokiaLCD.setCursor(0,2);
+      z++;
+      //Serial.print(key);
+      NokiaLCD.print("*");
+      break;
+    }
+  }
+}
+
+void checkPIN(){
   int correct=0;
   int correct2open=0;
   int correct2close=0;
   int i;
+  Serial.println("Entramos en checkPIN");
   //Serial.println();  
-  for ( i = 0;   i < 6 ;  i++ )
-  {
+  for ( i = 0;   i < 6 ;  i++ ){
     if (attempt[i]==PIN2OPEN[i])
     {
       correct2open++;
@@ -124,14 +115,13 @@ void checkPIN()
       correct2close++;
     }
   }
-  Serial.println(correct2open);
-  Serial.println(correct2close);
   if (correct2open==6){
     openDoor=true;
     correctPIN();
   }else if(correct2close==6){
     openDoor=false;
     correctPIN();
+    Serial.println("Se va a cerrar");
   }
   else
   {
@@ -145,26 +135,57 @@ void checkPIN()
   //}
 }
 
+void incorrectPIN() // do this if incorrect PIN entered
+{
+  attempt[6]={0};//Reseteamos el array de intentos
+  //Serial.print(" * Try again *");
+  NokiaLCD.clear();
+  NokiaLCD.setCursor(0,0);
+  NokiaLCD.print("PIN");
+  NokiaLCD.setCursor(0,1);
+  NokiaLCD.print("incorrecto");
+  delay(2500);
+  //Serial.print("  Enter PIN...");
+  //Serial.println();
+  NokiaLCD.clear();
+  NokiaLCD.setCursor(8,0);
+  NokiaLCD.print("Introduzca");
+  NokiaLCD.setCursor(30,1);
+  NokiaLCD.print("PIN:");
+  NokiaLCD.setCursor(0,2);
+}
+
+void correctPIN() // do this if correct PIN entered
+{
+  NokiaLCD.clear();
+  NokiaLCD.setCursor(0,0);
+  NokiaLCD.print("PIN Correcto");
+  //Serial.print("* Correct PIN *");
+  delay(500);
+  //Serial.print("  Enter PIN...");
+  //Serial.println();
+  fps.Open();
+  fps.SetLED(true);
+  checkFinger();
+}
+
 void checkFinger(){
   int tries=0;
   boolean success=false;
   //Serial.println("Please press finger");
-  lcd.clear();
-  lcd.setCursor(0,0);
-  lcd.print("Ponga el dedo en");
-  lcd.setCursor(0,1);
-  lcd.print("el lector");
+  NokiaLCD.clear();
+  NokiaLCD.setCursor(0,0);
+  NokiaLCD.print("Ponga el ");
+  NokiaLCD.setCursor(0,1);
+  NokiaLCD.print("dedo en");
+  NokiaLCD.setCursor(0,2);
+  NokiaLCD.print("el lector");
   do{
-  // Identify fingerprint test
-	if (fps.IsPressFinger())
-	{
-		fps.CaptureFinger(false);
-		int id = fps.Identify1_N();
-		if (id<200)
-		{
-			
-			//Serial.print("Verified ID:");
-      switch(id){
+    if (fps.IsPressFinger()){
+      fps.CaptureFinger(false);
+      int id = fps.Identify1_N();
+      if (id<200){
+        switch(id){
         case 0:
         case 1:
         case 2:
@@ -180,42 +201,39 @@ void checkFinger(){
           welcomeHome(2);
           break;
         default:
-          lcd.setCursor(5,1);
-          lcd.clear();
-          lcd.setCursor(0,0);
-          lcd.print("Identificador ");
-          lcd.setCursor(0,1);
+          NokiaLCD.setCursor(5,1);
+          NokiaLCD.clear();
+          NokiaLCD.setCursor(0,0);
+          NokiaLCD.print("Identificador ");
+          NokiaLCD.setCursor(0,1);
           //Serial.print(id);
-          lcd.print("inconsistente");
+          NokiaLCD.print("inconsistente");
         break;
-     }
-     
-			//Serial.println(id);
-     delay(3500);
-      success=true;
-		}
-		else
-		{
-      lcd.clear();
-      lcd.setCursor(0,0);
-		  lcd.print("Huella no");
-      lcd.setCursor(0,1);
-      lcd.print("encontrada...");
-      delay(2500);
-      tries++;
-      if(tries==5){
-        //Serial.println("Please press finger");
-        break;
+        }
+        //Serial.println(id);
+        delay(3500);
+        success=true;
       }else{
-        lcd.clear();
-        lcd.setCursor(0,0);
-        lcd.print("Ponga el dedo en");
-        lcd.setCursor(0,1);
-        lcd.print("el lector");
+        NokiaLCD.clear();
+        NokiaLCD.setCursor(0,0);
+        NokiaLCD.print("Huella no");
+        NokiaLCD.setCursor(0,1);
+        NokiaLCD.print("encontrada...");
+        delay(2500);
+        tries++;
+        if(tries==5){
+          //Serial.println("Please press finger");
+          break;
+        }else{
+        NokiaLCD.clear();
+        NokiaLCD.setCursor(0,0);
+        NokiaLCD.print("Ponga el dedo ");
+        NokiaLCD.setCursor(0,1);
+        NokiaLCD.print("en el lector");
+        }
       }
-		}
-	}
-	delay(100);
+    }
+    delay(100);
   }while (success!=true);
   fps.Close();
   fps.SetLED(false);
@@ -224,58 +242,43 @@ void checkFinger(){
 
 void welcomeHome (int id){
   boolean opened = false;
-  // definicion del nuevo caracter
-      byte love[8] = {
-          B00000,
-          B00000,
-          B11011,
-          B11111,
-          B11111,
-          B01110,
-          B00100,
-          B00000
-      };
-      lcd.createChar(0, love);
   switch(id){
     case 1:
-      lcd.clear();
-      lcd.setCursor(0,0);
+      NokiaLCD.clear();
+      NokiaLCD.setCursor(0,0);
       if(openDoor){
-        lcd.print("Bienvenido a");
-        lcd.setCursor(0,1);
+        NokiaLCD.print("Bienvenido a");
+        NokiaLCD.setCursor(0,1);
         //Serial.print(id);
-        lcd.print("casa Alex");
+        NokiaLCD.print("casa Alex");
       }else{
-        lcd.print("Hasta pronto");
-        lcd.setCursor(0,1);
+        NokiaLCD.print("Hasta pronto");
+        NokiaLCD.setCursor(0,1);
         //Serial.print(id);
-        lcd.print("Alex");
+        NokiaLCD.print("Alex");
       }
-      
       openDoorRelay();
       break;
     case 2:
-      lcd.clear();
-      lcd.setCursor(0,0);
+      NokiaLCD.clear();
+      NokiaLCD.setCursor(0,0);
       if(openDoor){
-        lcd.print("Bienvenida a");
-        lcd.setCursor(0,1);
+        NokiaLCD.print("Bienvenida a");
+        NokiaLCD.setCursor(0,1);
         //Serial.print(id);
-        lcd.print("casa reina mia ");
-        lcd.write(byte(0));
+        NokiaLCD.print("casa reina mia ");
       }else{
-        lcd.print("Hasta pronto");
-        lcd.setCursor(0,1);
+        NokiaLCD.print("Hasta pronto");
+        NokiaLCD.setCursor(0,1);
         //Serial.print(id);
-        lcd.print("reina mia ");
-        lcd.write(byte(0));
+        NokiaLCD.print("reina mia ");
       }
       openDoorRelay();
       break;
     default:
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Unespected error.");
+      NokiaLCD.clear();
+      NokiaLCD.setCursor(0,0);
+      NokiaLCD.print("Unespected error.");
       break;
     }
 }
@@ -292,44 +295,6 @@ void openDoorRelay(){
   }
 }
 
-void readKeypad()
-{
-  char key = keypad.getKey();
-  if (key != NO_KEY)
-  {
-    switch(key)
-    {
-    case '*':
-      z=0;
-      attempt[6]={0};//Reseteamos el array de intentos
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("Limpiando ");
-      lcd.setCursor(0,1);
-      lcd.print("pantalla...");
-      delay(1500);
-      lcd.clear();
-      lcd.print("Insertar PIN:");
-      break;
-    case '#':
-      z=0;
-      delay(100); // for extra debounce
-      checkPIN();
-      break;
-    default:
-      attempt[z]=key;
-      lcd.setCursor(z,1);
-      z++;
-      //Serial.print(key);
-      lcd.print("*");
-      break;
-    }
-  }
-}
- 
-void loop()
-{
+void loop(){
   readKeypad();
-  //en la función loop hacemos la llamada a esta función que reinicia el tiempo hasta el reset,
-  //wdt_reset();
 }
