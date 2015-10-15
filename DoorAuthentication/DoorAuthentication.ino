@@ -50,6 +50,10 @@ int z=0;
 
 void setup(){
   Serial.begin(9600);
+  pinMode(openChannel, OUTPUT);
+  pinMode(closeChannel, OUTPUT);
+  digitalWrite(openChannel, LOW);
+  digitalWrite(closeChannel, LOW);
   NokiaLCD.init();   // Init screen.
   NokiaLCD.clear();  // Clear screen.
   NokiaLCD.setCursor(8,0);
