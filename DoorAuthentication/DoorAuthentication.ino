@@ -2,9 +2,9 @@
 #include "Keypad.h"
 #include "FPS_GT511C3.h"
 #include "SoftwareSerial.h"
-NokiaLCD NokiaLCD(17,18,19,20,21); // (SCK, MOSI, DC, RST, CS)
+NokiaLCD NokiaLCD(26,25,24,23,22); // (SCK, MOSI, DC, RST, CS)
 
-FPS_GT511C3 fps(13, 14); //Finger print scanner
+FPS_GT511C3 fps(12, 14); //Finger print scanner
 const byte ROWS = 4; //four rows
 const byte COLS = 4; //four columns
 char keys[ROWS][COLS] =
@@ -22,14 +22,14 @@ char keys[ROWS][COLS] =
     '*','0','#','D'  }
 };
 byte rowPins[ROWS] = {
-  5, 4, 3, 2}; //connect to the row pinouts of the keypad
+  33, 32, 31, 30}; //connect to the row pinouts of the keypad
   //Arduino Pin - KeyPad Pin
   //    5       -     5 
   //    4       -     6
   //    3       -     7
   //    2       -     8 
 byte colPins[COLS] = {
-  9, 8, 7, 6}; //connect to the column pinouts of the keypad
+  37, 36, 35, 34}; //connect to the column pinouts of the keypad
   //Arduino Pin - KeyPad Pin
   //     9      -     1
   //     8      -     2
@@ -44,8 +44,8 @@ char PIN2CLOSE[6]={'1','1','1','1','1','B'}; // our secret (!) number
 char attempt[6]={'0','0','0','0','0','0'}; // used for comparison
 
 boolean openDoor=false;
-int openChannel=15;
-int closeChannel=16;
+int openChannel=9;
+int closeChannel=10;
 int z=0;
 
 void setup(){
@@ -96,7 +96,7 @@ void readKeypad(){
       attempt[z]=key;
       //NokiaLCD.setCursor(0,2);
       z++;
-      //Serial.print(key);
+      Serial.print(key);
       NokiaLCD.print("*");
       break;
     }
