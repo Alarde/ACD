@@ -1,9 +1,12 @@
 #include <NokiaLCD.h>
+#include <Wire.h>
 #include "Keypad.h"
 #include "FPS_GT511C3.h"
 #include "SoftwareSerial.h"
-NokiaLCD NokiaLCD(26,25,24,23,22); // (SCK, MOSI, DC, RST, CS)
+#include "RTClib.h"
 
+NokiaLCD NokiaLCD(26,25,24,23,22); // (SCK, MOSI, DC, RST, CS)
+RTC_DS1307 RTC;
 FPS_GT511C3 fps(12, 14); //Finger print scanner
 const byte ROWS = 4; //four rows
 const byte COLS = 4; //four columns
@@ -44,8 +47,9 @@ char PIN2CLOSE[6]={'1','1','1','1','1','B'}; // our secret (!) number
 char attempt[6]={'0','0','0','0','0','0'}; // used for comparison
 
 boolean openDoor=false;
-int openChannel=9;
-int closeChannel=10;
+const int openChannel=9;
+DateTime now;
+constint closeChannel=10;
 int z=0;
 
 void setup(){
@@ -54,8 +58,15 @@ void setup(){
   pinMode(closeChannel, OUTPUT);
   digitalWrite(openChannel, LOW);
   digitalWrite(closeChannel, LOW);
+  /*Programación Reloj*/
+  Wire.begin(); // Inicia el puerto I2C
+  RTC.begin(); // Inicia la comunicación con el RTC
+  RTC.adjust(DateTime(__DATE__, __TIME__)); // Establece la fecha y hora (Comentar una vez establecida la hora)
+  /*Fin Programación Reloj*/
+  /*Programación LCD*/
   NokiaLCD.init();   // Init screen.
   NokiaLCD.clear();  // Clear screen.
+  /*Fin Programación LCD*/
   NokiaLCD.setCursor(8,0);
   NokiaLCD.print("Introduzca");
   NokiaLCD.setCursor(30,1);
@@ -66,6 +77,14 @@ void setup(){
 void(* Resetea) (void) = 0;
 
 void readKeypad(){
+  now = RTC.now();
+  if(now.hour() == 22){
+    if(now.minute() == 30){
+      //cierra la puerta
+      openDoor=false;
+      doorRelay();
+    }
+  }
   char key = keypad.getKey();
   if (key != NO_KEY)
   {
@@ -261,7 +280,7 @@ void welcomeHome (int id){
         //Serial.print(id);
         NokiaLCD.print("Alex");
       }
-      openDoorRelay();
+      doorRelay();
       break;
     case 2:
       NokiaLCD.clear();
@@ -277,7 +296,7 @@ void welcomeHome (int id){
         //Serial.print(id);
         NokiaLCD.print("reina mia ");
       }
-      openDoorRelay();
+      doorRelay();
       break;
     default:
       NokiaLCD.clear();
@@ -287,7 +306,7 @@ void welcomeHome (int id){
     }
 }
 
-void openDoorRelay(){
+void doorRelay(){
   if (openDoor){ //only to open the door
     digitalWrite(openChannel, HIGH);
     delay(100);
