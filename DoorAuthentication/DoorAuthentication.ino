@@ -1,9 +1,11 @@
+#include <TimerOne.h>
+#include <RTClib.h>
 #include <NokiaLCD.h>
 #include <Wire.h>
 #include "Keypad.h"
 #include "FPS_GT511C3.h"
 #include "SoftwareSerial.h"
-#include "RTClib.h"
+
 
 NokiaLCD NokiaLCD(26,25,24,23,22); // (SCK, MOSI, DC, RST, CS)
 RTC_DS1307 RTC;
@@ -49,7 +51,7 @@ char attempt[6]={'0','0','0','0','0','0'}; // used for comparison
 boolean openDoor=false;
 const int openChannel=9;
 DateTime now;
-constint closeChannel=10;
+const int closeChannel=10;
 int z=0;
 
 void setup(){
@@ -59,7 +61,7 @@ void setup(){
   digitalWrite(openChannel, LOW);
   digitalWrite(closeChannel, LOW);
   /*Programación Reloj*/
-  Wire.begin(); // Inicia el puerto I2C
+  //Wire.begin(); // Inicia el puerto I2C
   RTC.begin(); // Inicia la comunicación con el RTC
   RTC.adjust(DateTime(__DATE__, __TIME__)); // Establece la fecha y hora (Comentar una vez establecida la hora)
   /*Fin Programación Reloj*/
@@ -67,6 +69,10 @@ void setup(){
   NokiaLCD.init();   // Init screen.
   NokiaLCD.clear();  // Clear screen.
   /*Fin Programación LCD*/
+  /*Configuracion interrupcion*/
+  Timer1.initialize(4000000);         // Dispara cada 4 segundos // 30 min -- 1800000000
+  Timer1.attachInterrupt(checkNightClose); // Activa la interrupcion y la asocia a ISR_Blink
+  /*Fin Configuracion interrupcion*/
   NokiaLCD.setCursor(8,0);
   NokiaLCD.print("Introduzca");
   NokiaLCD.setCursor(30,1);
@@ -76,15 +82,36 @@ void setup(){
 
 void(* Resetea) (void) = 0;
 
-void readKeypad(){
-  now = RTC.now();
-  if(now.hour() == 22){
-    if(now.minute() == 30){
-      //cierra la puerta
-      openDoor=false;
-      doorRelay();
+//Function que chequeara la hora cada 30 minutos para ver si tiene que cerrar la puerta.
+
+void checkNightClose(){
+  Serial.print(now.hour());
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.print(now.second(), DEC);
+  Serial.println();
+  if(now.hour() == 23){
+    Serial.println("Estamos en las 22");
+    if(now.minute() > 30){
+      Serial.println("Son entre las 22:30 y 22:59");
+      //if(openDoor!=false){
+         //openDoor=false;
+         //doorRelay();
+         //doorRelay();
+      //}
     }
   }
+ //   if(now.minute() == 30){
+      //cierra la puerta
+ //     openDoor=false;
+ //     doorRelay();
+ //   }
+ // }
+}
+
+void readKeypad(){
+  now = RTC.now();
   char key = keypad.getKey();
   if (key != NO_KEY)
   {
@@ -149,7 +176,8 @@ void checkPIN(){
   else
   {
     incorrectPIN();
-    Resetea();
+    //Resetea();
+    resetScreen();
   }
   attempt[6]={0};//Reseteamos el array de intentos
   //for (int zz=0; zz<6; zz++) 
@@ -250,9 +278,11 @@ void checkFinger(){
         }else{
         NokiaLCD.clear();
         NokiaLCD.setCursor(0,0);
-        NokiaLCD.print("Ponga el dedo ");
+        NokiaLCD.print("Ponga el ");
         NokiaLCD.setCursor(0,1);
-        NokiaLCD.print("en el lector");
+        NokiaLCD.print("dedo en");
+        NokiaLCD.setCursor(0,2);
+        NokiaLCD.print("el lector");
         }
       }
     }
@@ -260,7 +290,19 @@ void checkFinger(){
   }while (success!=true);
   fps.Close();
   fps.SetLED(false);
-  Resetea();
+  //Resetea();
+  resetScreen();
+}
+
+void resetScreen(){
+  
+  NokiaLCD.clear();
+  NokiaLCD.setCursor(8,0);
+  NokiaLCD.print("Introduzca");
+  NokiaLCD.setCursor(30,1);
+  NokiaLCD.print("PIN:");
+  NokiaLCD.setCursor(0,2);
+  readKeypad();
 }
 
 void welcomeHome (int id){
