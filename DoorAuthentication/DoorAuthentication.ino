@@ -53,6 +53,7 @@ const int openChannel=9;
 DateTime now;
 const int closeChannel=10;
 int z=0;
+boolean nightClousure=true;
 
 void setup(){
   Serial.begin(9600);
@@ -92,22 +93,17 @@ void checkNightClose(){
   Serial.print(now.second(), DEC);
   Serial.println();
   if(now.hour() == 23){
-    Serial.println("Estamos en las 22");
-    if(now.minute() > 30){
-      Serial.println("Son entre las 22:30 y 22:59");
-      //if(openDoor!=false){
-         //openDoor=false;
-         //doorRelay();
-         //doorRelay();
-      //}
+    if(now.minute() < 30){
+      openDoor=false;
+      Serial.println("Son entre las 23:30 y 23:59");
+      if(nightClousure!=true){
+         doorRelay();
+      }
     }
+  }else{
+    //Reset night clousure 
+    nightClousure=false;
   }
- //   if(now.minute() == 30){
-      //cierra la puerta
- //     openDoor=false;
- //     doorRelay();
- //   }
- // }
 }
 
 void readKeypad(){
@@ -295,7 +291,8 @@ void checkFinger(){
 }
 
 void resetScreen(){
-  
+
+  char attempt[6]={'0','0','0','0','0','0'};
   NokiaLCD.clear();
   NokiaLCD.setCursor(8,0);
   NokiaLCD.print("Introduzca");
@@ -349,13 +346,17 @@ void welcomeHome (int id){
 }
 
 void doorRelay(){
+  
+  Serial.println("Entramos en doorRelay");
   if (openDoor){ //only to open the door
+    Serial.println("Abrimos puerta");
     digitalWrite(openChannel, HIGH);
-    delay(100);
+    delay(2000);
     digitalWrite(openChannel, LOW);
   }else{
-     digitalWrite(closeChannel, HIGH);
-    delay(100);
+    Serial.println("Cerramos puerta");
+    digitalWrite(closeChannel, HIGH);
+    delay(2000);
     digitalWrite(closeChannel, LOW);
   }
 }
