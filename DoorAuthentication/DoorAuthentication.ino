@@ -1,13 +1,16 @@
 #include <TimerOne.h>
 #include <RTClib.h>
-#include <NokiaLCD.h>
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_PCD8544.h>
 #include <Wire.h>
 #include "Keypad.h"
 #include "FPS_GT511C3.h"
 #include "SoftwareSerial.h"
 
+//SPI to be tested.
 
-NokiaLCD NokiaLCD(26,25,24,23,22); // (SCK, MOSI, DC, RST, CS)
+Adafruit_PCD8544 display = Adafruit_PCD8544(26,25,24,22,23); // (SCLK, MOSI, DC, RST, CS)
 RTC_DS1307 RTC;
 FPS_GT511C3 fps(12, 14); //Finger print scanner
 const byte ROWS = 4; //four rows
@@ -67,18 +70,26 @@ void setup(){
   RTC.adjust(DateTime(__DATE__, __TIME__)); // Establece la fecha y hora (Comentar una vez establecida la hora)
   /*Fin Programación Reloj*/
   /*Programación LCD*/
-  NokiaLCD.init();   // Init screen.
-  NokiaLCD.clear();  // Clear screen.
+  //NokiaLCD.init();   // Init screen.
+  //NokiaLCD.clear();  // Clear screen.
+  display.begin();
+  display.setContrast(60);
+  display.clearDisplay();   // clears the screen and buffer
+  display.setTextSize(1);
+  display.setCursor(0,0);
+  display.println("Introduzca ");
+  display.println("PIN: ");
+  display.display();
   /*Fin Programación LCD*/
   /*Configuracion interrupcion*/
   Timer1.initialize(4000000);         // Dispara cada 4 segundos // 30 min -- 1800000000
   Timer1.attachInterrupt(checkNightClose); // Activa la interrupcion y la asocia a ISR_Blink
   /*Fin Configuracion interrupcion*/
-  NokiaLCD.setCursor(8,0);
-  NokiaLCD.print("Introduzca");
-  NokiaLCD.setCursor(30,1);
-  NokiaLCD.print("PIN:");
-  NokiaLCD.setCursor(0,2);
+  //NokiaLCD.setCursor(8,0);
+  //NokiaLCD.print("Introduzca");
+  //NokiaLCD.setCursor(30,1);
+  //NokiaLCD.print("PIN:");
+  //NokiaLCD.setCursor(0,2);
 }
 
 void(* Resetea) (void) = 0;
@@ -116,18 +127,26 @@ void readKeypad(){
     case '*':
       z=0;
       attempt[6]={0};//Reseteamos el array de intentos
-      NokiaLCD.clear();
-      NokiaLCD.setCursor(0,0);
-      NokiaLCD.print("Limpiando ");
-      NokiaLCD.setCursor(0,1);
-      NokiaLCD.print("pantalla...");
+      display.clearDisplay();   // clears the screen and buffer
+      display.println("Limpiando ");
+      display.println("pantalla... ");
+      display.display();
+      display.clearDisplay();
+      //NokiaLCD.clear();
+      //NokiaLCD.setCursor(0,0);
+      //NokiaLCD.print("Limpiando ");
+      //NokiaLCD.setCursor(0,1);
+      //NokiaLCD.print("pantalla...");
       delay(1500);
-      NokiaLCD.clear();
-      NokiaLCD.setCursor(8,0);
-      NokiaLCD.print("Introduzca");
-      NokiaLCD.setCursor(30,1);
-      NokiaLCD.print("PIN:");
-      NokiaLCD.setCursor(0,2);
+      display.println("Introduzca ");
+      display.println("PIN: ");
+      display.display();
+      //NokiaLCD.clear();
+      //NokiaLCD.setCursor(8,0);
+      //NokiaLCD.print("Introduzca");
+      //NokiaLCD.setCursor(30,1);
+      //NokiaLCD.print("PIN:");
+      //NokiaLCD.setCursor(0,2);
       break;
     case '#':
       z=0;
@@ -139,7 +158,9 @@ void readKeypad(){
       //NokiaLCD.setCursor(0,2);
       z++;
       Serial.print(key);
-      NokiaLCD.print("*");
+      //NokiaLCD.print("*");
+      display.print("*");
+      display.display();
       break;
     }
   }
@@ -185,28 +206,38 @@ void checkPIN(){
 void incorrectPIN() // do this if incorrect PIN entered
 {
   attempt[6]={0};//Reseteamos el array de intentos
+  display.clearDisplay();
+  display.println("PIN incorrecto");
+  display.display();
   //Serial.print(" * Try again *");
-  NokiaLCD.clear();
-  NokiaLCD.setCursor(0,0);
-  NokiaLCD.print("PIN");
-  NokiaLCD.setCursor(0,1);
-  NokiaLCD.print("incorrecto");
+  //NokiaLCD.clear();
+  //NokiaLCD.setCursor(0,0);
+  //NokiaLCD.print("PIN");
+  //NokiaLCD.setCursor(0,1);
+ // NokiaLCD.print("incorrecto");
   delay(2500);
+  display.clearDisplay();
+  display.println("Introduzca ");
+  display.println("PIN: ");
+  display.display();
   //Serial.print("  Enter PIN...");
   //Serial.println();
-  NokiaLCD.clear();
-  NokiaLCD.setCursor(8,0);
-  NokiaLCD.print("Introduzca");
-  NokiaLCD.setCursor(30,1);
-  NokiaLCD.print("PIN:");
-  NokiaLCD.setCursor(0,2);
+  //NokiaLCD.clear();
+  //NokiaLCD.setCursor(8,0);
+  //NokiaLCD.print("Introduzca");
+  //NokiaLCD.setCursor(30,1);
+  //NokiaLCD.print("PIN:");
+  //NokiaLCD.setCursor(0,2);
 }
 
 void correctPIN() // do this if correct PIN entered
 {
-  NokiaLCD.clear();
-  NokiaLCD.setCursor(0,0);
-  NokiaLCD.print("PIN Correcto");
+  display.clearDisplay();
+  display.println("Pin Correcto");
+  display.display();
+  //NokiaLCD.clear();
+  //NokiaLCD.setCursor(0,0);
+  //NokiaLCD.print("PIN Correcto");
   //Serial.print("* Correct PIN *");
   delay(500);
   //Serial.print("  Enter PIN...");
@@ -220,13 +251,18 @@ void checkFinger(){
   int tries=0;
   boolean success=false;
   //Serial.println("Please press finger");
-  NokiaLCD.clear();
-  NokiaLCD.setCursor(0,0);
-  NokiaLCD.print("Ponga el ");
-  NokiaLCD.setCursor(0,1);
-  NokiaLCD.print("dedo en");
-  NokiaLCD.setCursor(0,2);
-  NokiaLCD.print("el lector");
+  display.clearDisplay();
+  display.println("Ponga el ");
+  display.println("dedo en ");
+  display.println("el lector");
+  display.display();
+  //NokiaLCD.clear();
+  //NokiaLCD.setCursor(0,0);
+ // NokiaLCD.print("Ponga el ");
+ // NokiaLCD.setCursor(0,1);
+  //NokiaLCD.print("dedo en");
+ /// NokiaLCD.setCursor(0,2);
+ // NokiaLCD.print("el lector");
   do{
     if (fps.IsPressFinger()){
       fps.CaptureFinger(false);
@@ -248,37 +284,51 @@ void checkFinger(){
           welcomeHome(2);
           break;
         default:
-          NokiaLCD.setCursor(5,1);
-          NokiaLCD.clear();
-          NokiaLCD.setCursor(0,0);
-          NokiaLCD.print("Identificador ");
-          NokiaLCD.setCursor(0,1);
+        display.clearDisplay();
+        display.println("Identificador ");
+        display.println(id);
+        display.println("inconsistente");
+        display.display();
+          //NokiaLCD.setCursor(5,1);
+          //NokiaLCD.clear();
+         // NokiaLCD.setCursor(0,0);
+         // NokiaLCD.print("Identificador ");
+         // NokiaLCD.setCursor(0,1);
           //Serial.print(id);
-          NokiaLCD.print("inconsistente");
+         // NokiaLCD.print("inconsistente");
         break;
         }
         //Serial.println(id);
         delay(3500);
         success=true;
       }else{
-        NokiaLCD.clear();
-        NokiaLCD.setCursor(0,0);
-        NokiaLCD.print("Huella no");
-        NokiaLCD.setCursor(0,1);
-        NokiaLCD.print("encontrada...");
+        display.clearDisplay();
+        display.println("Huella no ");
+        display.println("encontrada...");
+        display.display();
+       // NokiaLCD.clear();
+        //NokiaLCD.setCursor(0,0);
+        //NokiaLCD.print("Huella no");
+       // NokiaLCD.setCursor(0,1);
+        //NokiaLCD.print("encontrada...");
         delay(2500);
         tries++;
         if(tries==5){
           //Serial.println("Please press finger");
           break;
         }else{
-        NokiaLCD.clear();
-        NokiaLCD.setCursor(0,0);
-        NokiaLCD.print("Ponga el ");
-        NokiaLCD.setCursor(0,1);
-        NokiaLCD.print("dedo en");
-        NokiaLCD.setCursor(0,2);
-        NokiaLCD.print("el lector");
+          display.clearDisplay();
+          display.println("Ponga el ");
+          display.println("dedo en ");
+          display.println("el lector");
+          display.display();
+        //NokiaLCD.clear();
+       // NokiaLCD.setCursor(0,0);
+       // NokiaLCD.print("Ponga el ");
+       /// NokiaLCD.setCursor(0,1);
+        //NokiaLCD.print("dedo en");
+        //NokiaLCD.setCursor(0,2);
+        //NokiaLCD.print("el lector");
         }
       }
     }
@@ -293,12 +343,16 @@ void checkFinger(){
 void resetScreen(){
 
   char attempt[6]={'0','0','0','0','0','0'};
-  NokiaLCD.clear();
-  NokiaLCD.setCursor(8,0);
-  NokiaLCD.print("Introduzca");
-  NokiaLCD.setCursor(30,1);
-  NokiaLCD.print("PIN:");
-  NokiaLCD.setCursor(0,2);
+  display.clearDisplay();
+  display.println("Introduzca ");
+  display.println("PIN: ");
+  display.display();
+  //NokiaLCD.clear();
+  //NokiaLCD.setCursor(8,0);
+  //NokiaLCD.print("Introduzca");
+  //NokiaLCD.setCursor(30,1);
+  //NokiaLCD.print("PIN:");
+  //NokiaLCD.setCursor(0,2);
   readKeypad();
 }
 
@@ -306,41 +360,57 @@ void welcomeHome (int id){
   boolean opened = false;
   switch(id){
     case 1:
-      NokiaLCD.clear();
-      NokiaLCD.setCursor(0,0);
+      display.clearDisplay();
+     // NokiaLCD.clear();
+      //NokiaLCD.setCursor(0,0);
       if(openDoor){
-        NokiaLCD.print("Bienvenido a");
-        NokiaLCD.setCursor(0,1);
+        display.println("Bienvenido a ");
+        display.println("casa Alex.");
+        display.display();
+        //NokiaLCD.print("Bienvenido a");
+        //NokiaLCD.setCursor(0,1);
         //Serial.print(id);
-        NokiaLCD.print("casa Alex");
+        //NokiaLCD.print("casa Alex");
       }else{
-        NokiaLCD.print("Hasta pronto");
-        NokiaLCD.setCursor(0,1);
+        display.println("Hasta pronto");
+        display.println("Alex.");
+        display.display();
+        //NokiaLCD.print("Hasta pronto");
+        //NokiaLCD.setCursor(0,1);
         //Serial.print(id);
-        NokiaLCD.print("Alex");
+        //NokiaLCD.print("Alex");
       }
       doorRelay();
       break;
     case 2:
-      NokiaLCD.clear();
-      NokiaLCD.setCursor(0,0);
+      //NokiaLCD.clear();
+      //NokiaLCD.setCursor(0,0);
       if(openDoor){
-        NokiaLCD.print("Bienvenida a");
-        NokiaLCD.setCursor(0,1);
+        display.println("Bienvenida a ");
+        display.println("casa reina mía.");
+        display.display();
+        //NokiaLCD.print("Bienvenida a");
+        //NokiaLCD.setCursor(0,1);
         //Serial.print(id);
-        NokiaLCD.print("casa reina mia ");
+        //NokiaLCD.print("casa reina mia ");
       }else{
-        NokiaLCD.print("Hasta pronto");
-        NokiaLCD.setCursor(0,1);
+        display.println("Hasta pronto ");
+        display.println("reina mía.");
+        display.display();
+        //NokiaLCD.print("Hasta pronto");
+        //NokiaLCD.setCursor(0,1);
         //Serial.print(id);
-        NokiaLCD.print("reina mia ");
+       // NokiaLCD.print("reina mia ");
       }
       doorRelay();
       break;
     default:
-      NokiaLCD.clear();
-      NokiaLCD.setCursor(0,0);
-      NokiaLCD.print("Unespected error.");
+      display.clearDisplay();
+      //NokiaLCD.clear();
+      //NokiaLCD.setCursor(0,0);
+      display.println("Error inesperado.");
+      display.display();
+      //NokiaLCD.print("Unespected error.");
       break;
     }
 }
